@@ -1,6 +1,5 @@
 """Tests for the core service contracts."""
-import os
-import tempfile
+import secrets
 import unittest
 from datetime import date
 import config
@@ -20,9 +19,9 @@ class ServiceTests(unittest.TestCase):
         """FEATURE: Service Tests
         Create a small isolated database for each service test."""
         self.original_db_name = config.DB_NAME
-        handle, self.temp_db = tempfile.mkstemp(suffix=".db")
-        os.close(handle)
+        self.temp_db = f"file:pg_manager_test_{secrets.token_hex(8)}?mode=memory&cache=shared"
         config.DB_NAME = self.temp_db
+        self.keeper = get_connection()
         create_tables()
         conn = get_connection()
         conn.execute(
@@ -43,9 +42,8 @@ class ServiceTests(unittest.TestCase):
     def tearDown(self):
         """FEATURE: Service Tests
         Restore the original database setting and remove the test database."""
+        self.keeper.close()
         config.DB_NAME = self.original_db_name
-        if os.path.exists(self.temp_db):
-            os.remove(self.temp_db)
 
     def test_tenant_creation_and_duplicate_bed(self):
         """FEATURE: Service Tests
@@ -96,6 +94,33 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(get_announcements_for_pg(1)[0]["id"], announcement_id)
         self.assertIsNone(delete_announcement(announcement_id))
         self.assertEqual(get_announcements_for_pg(1), [])
+
+    def test_invalid_payment_and_ticket_inputs(self):
+        """FEATURE: Service Tests
+        Reject invalid payment amounts, modes, dates, and ticket fields."""
+        with self.assertRaises(ValueError):
+            add_payment(self.tenant_id, 0, date.today(), "cash")
+        with self.assertRaises(ValueError):
+            add_payment(self.tenant_id, 100, date.today(), "card")
+        with self.assertRaises(ValueError):
+            add_payment(self.tenant_id, 100, "not-a-date", "cash")
+        with self.assertRaises(ValueError):
+            create_ticket(self.tenant_id, "Invalid", "Issue", "High")
+        with self.assertRaises(ValueError):
+            create_ticket(self.tenant_id, "Plumbing", "", "High")
+
+    def test_ticket_resolution_timestamp_and_empty_announcement(self):
+        """FEATURE: Service Tests
+        Check resolved timestamps and reject empty announcements."""
+        ticket_id = create_ticket(self.tenant_id, "Plumbing", "Tap is leaking", "High")
+        update_ticket_status(ticket_id, "Resolved")
+        conn = get_connection()
+        row = conn.execute("SELECT status, resolved_at FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+        conn.close()
+        self.assertEqual(row["status"], "Resolved")
+        self.assertIsNotNone(row["resolved_at"])
+        with self.assertRaises(ValueError):
+            add_announcement(1, "   ")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
-﻿__pycache__/
+__pycache__/
 *.py[cod]
 .venv/
 venv/
 .env
-pg.db
+*.db
 *.sqlite
 *.sqlite3

@@ -41,6 +41,36 @@ class PricingTests(unittest.TestCase):
         self.assertEqual(sum(amount for _, amount in schedule), 120000)
         self.assertEqual(schedule[1][0], date(2026, 9, 30))
 
+    def test_discount_tier_boundaries(self):
+        """FEATURE: Pricing Tests
+        Check dates at each discount tier boundary."""
+        cases = [
+            (date(2026, 8, 1), 0),
+            (date(2026, 8, 2), 5),
+            (date(2026, 8, 31), 5),
+            (date(2026, 9, 1), 10),
+            (date(2026, 9, 30), 10),
+            (date(2026, 10, 1), 15),
+            (date(2026, 10, 30), 15),
+            (date(2026, 10, 31), 20),
+        ]
+        for join_date, expected in cases:
+            with self.subTest(join_date=join_date):
+                self.assertEqual(get_late_join_discount_percent(join_date), expected)
+
+    def test_schedule_last_installment_gets_remainder(self):
+        """FEATURE: Pricing Tests
+        Check that the final installment receives any division remainder."""
+        schedule = get_installment_schedule(100000, date(2026, 1, 31))
+        self.assertEqual(schedule[0][1], 8333)
+        self.assertEqual(schedule[-1][1], 8337)
+        self.assertEqual(schedule[-1][0], date(2026, 12, 31))
+
+    def test_leap_year_month_end(self):
+        """FEATURE: Pricing Tests
+        Check month-end scheduling through a leap-year February."""
+        self.assertEqual(add_months(date(2028, 1, 31), 1), date(2028, 2, 29))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -56,4 +56,8 @@ class BlueprintPanel(ttk.Frame):
     def open_bed(self, bed):
         """FEATURE: Bed Details
         Open the details popup for the selected bed."""
-        BedDetailWindow(self, self.app, bed["bed_id"], self.pg, self.refresh)
+        window = tk.Toplevel(self.winfo_toplevel())
+        window.title("Bed Details")
+        window.geometry("650x560")
+        window.transient(self.winfo_toplevel())
+        BedDetailWindow(window, self.app, bed["bed_id"], self.pg, self.refresh).pack(fill="both", expand=True)

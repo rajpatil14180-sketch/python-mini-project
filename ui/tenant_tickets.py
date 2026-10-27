@@ -1,5 +1,6 @@
 """Tenant maintenance ticket screen."""
-from tkinter import ttk, messagebox, simpledialog
+import tkinter as tk
+from tkinter import ttk, messagebox
 from core.ticket_service import create_ticket, get_tickets_for_tenant
 import config
 
@@ -19,9 +20,7 @@ class TenantTickets(ttk.Frame):
             self.table.heading(col, text=title)
             self.table.column(col, width=130)
         self.table.pack(fill="both", expand=True)
-        buttons = ttk.Frame(self)
-        buttons.pack(fill="x", pady=8)
-        ttk.Button(buttons, text="Raise ticket", command=self.raise_ticket).pack(side="left")
+        ttk.Button(self, text="Raise ticket", command=self.raise_ticket).pack(anchor="w", pady=8)
         self.refresh()
 
     def refresh(self):
@@ -30,33 +29,31 @@ class TenantTickets(ttk.Frame):
         for item in self.table.get_children():
             self.table.delete(item)
         for ticket in get_tickets_for_tenant(self.tenant_id):
-            self.table.insert("", "end", iid=str(ticket["id"]), values=(
-                ticket["created_at"], ticket["category"], ticket["urgency"],
-                ticket["status"], ticket["description"]
-            ))
+            values = (ticket["created_at"], ticket["category"], ticket["urgency"], ticket["status"], ticket["description"])
+            self.table.insert("", "end", iid=str(ticket["id"]), values=values)
 
-    def raise_ticket(self):
+    def raise_ticket(self, dialog=None):
         """FEATURE: Tenant Tickets
-        Collect ticket fields and create a ticket."""
-        category = simpledialog.askstring("Maintenance ticket", "Category: " + ", ".join(config.TICKET_CATEGORIES), parent=self)
-        if not category:
-            return
-        category = next((item for item in config.TICKET_CATEGORIES if item.lower() == category.strip().lower()), "")
-        if not category:
-            messagebox.showerror("Invalid category", "Choose one of the listed categories.")
-            return
-        urgency = simpledialog.askstring("Maintenance ticket", "Urgency: Low, Medium, or High", parent=self)
-        if not urgency:
-            return
-        urgency = next((item for item in config.TICKET_URGENCIES if item.lower() == urgency.strip().lower()), "")
-        if not urgency:
-            messagebox.showerror("Invalid urgency", "Choose Low, Medium, or High.")
-            return
-        description = simpledialog.askstring("Maintenance ticket", "Describe the issue:", parent=self)
-        if not description:
+        Collect ticket fields in a form and create a ticket."""
+        if dialog is None:
+            dialog = tk.Toplevel(self.winfo_toplevel())
+            dialog.title("Raise Maintenance Ticket")
+            dialog.transient(self.winfo_toplevel())
+            self.ticket_category = ttk.Combobox(dialog, values=config.TICKET_CATEGORIES, state="readonly")
+            self.ticket_urgency = ttk.Combobox(dialog, values=config.TICKET_URGENCIES, state="readonly")
+            self.ticket_description = ttk.Entry(dialog, width=45)
+            self.ticket_category.set(config.TICKET_CATEGORIES[0])
+            self.ticket_urgency.set(config.TICKET_URGENCIES[1])
+            for label, widget in [("Category", self.ticket_category), ("Urgency", self.ticket_urgency), ("Description", self.ticket_description)]:
+                ttk.Label(dialog, text=label).pack(anchor="w", padx=12, pady=(8, 0))
+                widget.pack(fill="x", padx=12)
+            ttk.Button(dialog, text="Submit ticket", command=lambda: self.raise_ticket(dialog)).pack(pady=12)
+            dialog.grab_set()
             return
         try:
-            create_ticket(self.tenant_id, category, description, urgency)
-            self.refresh()
+            create_ticket(self.tenant_id, self.ticket_category.get(), self.ticket_description.get(), self.ticket_urgency.get())
         except ValueError as error:
-            messagebox.showerror("Could not create ticket", str(error))
+            messagebox.showerror("Could not create ticket", str(error), parent=dialog)
+            return
+        dialog.destroy()
+        self.refresh()

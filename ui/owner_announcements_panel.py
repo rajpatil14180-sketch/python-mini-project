@@ -1,6 +1,6 @@
 """Owner announcements panel."""
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import ttk, messagebox
 from core.announcement_service import add_announcement, get_announcements_for_pg, delete_announcement
 
 
@@ -33,24 +33,34 @@ class OwnerAnnouncementsPanel(ttk.Frame):
         for item in get_announcements_for_pg(self.pg["id"]):
             self.table.insert("", "end", iid=str(item["id"]), values=(item["created_at"], item["message"]))
 
-    def add(self):
-        """FEATURE: Owner Announcements
-        Ask for a message and save it."""
-        message = simpledialog.askstring("New announcement", "Announcement message:", parent=self)
-        if message:
-            try:
-                add_announcement(self.pg["id"], message)
-                self.refresh()
-            except ValueError as error:
-                messagebox.showerror("Invalid announcement", str(error))
+    def add(self, dialog=None):
+        """FEATURE: Add Announcement
+        Collect an announcement in a form and save it."""
+        if dialog is None:
+            dialog = tk.Toplevel(self.winfo_toplevel())
+            dialog.title("New Announcement")
+            dialog.transient(self.winfo_toplevel())
+            self.announcement_message = ttk.Entry(dialog, width=60)
+            ttk.Label(dialog, text="Announcement message").pack(anchor="w", padx=12, pady=(10, 0))
+            self.announcement_message.pack(fill="x", padx=12, pady=8)
+            ttk.Button(dialog, text="Post announcement", command=lambda: self.add(dialog)).pack(pady=10)
+            dialog.grab_set()
+            return
+        try:
+            add_announcement(self.pg["id"], self.announcement_message.get())
+        except ValueError as error:
+            messagebox.showerror("Invalid announcement", str(error), parent=dialog)
+            return
+        dialog.destroy()
+        self.refresh()
 
     def delete(self):
-        """FEATURE: Owner Announcements
-        Delete the selected announcement."""
+        """FEATURE: Delete Announcement
+        Delete the selected announcement after confirmation."""
         selected = self.table.selection()
         if not selected:
-            messagebox.showinfo("Select announcement", "Choose an announcement first.")
+            messagebox.showinfo("Select announcement", "Choose an announcement first.", parent=self.winfo_toplevel())
             return
-        if messagebox.askyesno("Confirm", "Delete this announcement?"):
+        if messagebox.askyesno("Confirm", "Delete this announcement?", parent=self.winfo_toplevel()):
             delete_announcement(int(selected[0]))
             self.refresh()

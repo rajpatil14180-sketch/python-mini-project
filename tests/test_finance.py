@@ -1,6 +1,5 @@
 """Tests for tenant finance calculations and password verification."""
-import os
-import tempfile
+import secrets
 import unittest
 from datetime import date
 import config
@@ -17,9 +16,9 @@ class FinanceTests(unittest.TestCase):
         """FEATURE: Finance Tests
         Prepare an isolated test database."""
         self.original_db_name = config.DB_NAME
-        handle, self.temp_db = tempfile.mkstemp(suffix=".db")
-        os.close(handle)
+        self.temp_db = f"file:pg_manager_test_{secrets.token_hex(8)}?mode=memory&cache=shared"
         config.DB_NAME = self.temp_db
+        self.keeper = get_connection()
         create_tables()
         conn = get_connection()
         conn.execute(
@@ -44,10 +43,9 @@ class FinanceTests(unittest.TestCase):
 
     def tearDown(self):
         """FEATURE: Finance Tests
-        Restore the database setting and remove the temporary database."""
+        Close the isolated in-memory database and restore the setting."""
+        self.keeper.close()
         config.DB_NAME = self.original_db_name
-        if os.path.exists(self.temp_db):
-            os.remove(self.temp_db)
 
     def test_overdue_calculation(self):
         """FEATURE: Finance Tests
@@ -74,6 +72,29 @@ class FinanceTests(unittest.TestCase):
         self.assertEqual(info["overdue_amount"], 0)
         self.assertEqual(info["status"], "ok")
         self.assertEqual(info["next_due_date"], "2026-09-01")
+
+    def test_all_installments_paid_has_no_next_due_date(self):
+        """FEATURE: Finance Tests
+        Check that a fully paid tenant has no remaining installment date."""
+        conn = get_connection()
+        conn.execute("DELETE FROM payments WHERE tenant_id = ?", (self.tenant_id,))
+        for index in range(12):
+            due_month = index + 1
+            due_year = 2026 + (due_month - 1) // 12
+            due_month = (due_month - 1) % 12 + 1
+            due_date = date(due_year, due_month, 1).isoformat()
+            amount = 10000
+            conn.execute(
+                "INSERT INTO payments (tenant_id, amount, paid_on, mode) VALUES (?, ?, ?, ?)",
+                (self.tenant_id, amount, due_date, "cash"),
+            )
+        conn.commit()
+        conn.close()
+        info = get_tenant_financials(self.tenant_id, date(2027, 6, 1))
+        self.assertEqual(info["total_paid"], 120000)
+        self.assertEqual(info["due_left"], 0)
+        self.assertIsNone(info["next_due_date"])
+        self.assertEqual(info["status"], "ok")
 
     def test_password_verification(self):
         """FEATURE: Finance Tests

@@ -72,7 +72,7 @@ def get_connection(db_name=None):
     Open SQLite with foreign keys enabled and rows accessible by column name."""
     if db_name is None:
         db_name = config.DB_NAME
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(db_name, uri=db_name.startswith("file:"))
     conn.execute("PRAGMA foreign_keys = ON")
     conn.row_factory = sqlite3.Row
     return conn

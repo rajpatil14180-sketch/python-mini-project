@@ -1,5 +1,4 @@
 """Seed script for the sample data described in docs/SPEC.md."""
-import os
 from datetime import date, timedelta
 import config
 from database import create_tables, get_connection
@@ -195,10 +194,13 @@ def insert_announcements(cursor, pg_ids, today):
 
 def main():
     """FEATURE: Seed Data
-    Create a fresh database and insert all sample records."""
-    if os.path.exists(config.DB_NAME):
-        os.remove(config.DB_NAME)
+    Reset the sample tables and insert all sample records."""
     create_tables()
+    conn = get_connection()
+    for table in ("payments", "tickets", "announcements", "tenants", "beds", "rooms", "pgs", "users"):
+        conn.execute(f"DELETE FROM {table}")
+    conn.commit()
+    conn.close()
     _populate_database()
     _print_summary()
 

@@ -8,8 +8,10 @@ A beginner-friendly desktop PG management application built with Python's standa
 
 ## Run
 1. Open a terminal in this folder.
-2. Create the sample database: `python seed_data.py`
+2. Create/reset the sample database: `python seed_data.py`
 3. Start the application: `python main.py`
+
+`seed_data.py` resets the app tables to the demo dataset, so do not run it if you need to keep real tenant/payment records.
 
 ## Demo accounts
 - Owner: `owner` / `owner123`
