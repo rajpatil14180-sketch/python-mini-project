@@ -3,6 +3,6 @@ __pycache__/
 .venv/
 venv/
 .env
-*.db
-*.sqlite
-*.sqlite3
+node_modules/
+dist/
+*.db-journal
