@@ -10,6 +10,8 @@
 | Login | Valid account is authenticated; inactive tenants are rejected | `core/auth.py` | `login` |
 | Database Setup | Required SQLite tables and active-bed index exist | `database.py` | `get_connection`, `create_tables` |
 | Late-Join Pricing | Suggested yearly price reflects the configured discount | `core/pricing.py` | `get_late_join_discount_percent`, `calculate_agreed_price` |
+| Monthly Rent | Owner-agreed rent is represented as a whole-rupee monthly amount with due-date and balance helpers | `core/monthly_rent.py` | `get_monthly_due_date`, `get_monthly_expected_rent`, `get_monthly_balance` |
+| Web UI Prototype | Modern property workspace with side navigation, simplified floor plan, monthly rent display, and bed detail panel | `web/src/App.tsx`, `web/src/style.css` | `App`, `Metric`, `EmptyPanel` |
 | Installment Schedule | Yearly price is split into 12 monthly due dates | `core/pricing.py` | `add_months`, `get_installment_schedule` |
 | Tenant Financials | Paid, expected, remaining, overdue, next due date, and payment history | `core/finance.py` | `get_tenant_financials` |
 | Owner PG List | Owner sees each PG, occupancy, and overdue tenant count | `core/pg_service.py`, `ui/owner_pg_list.py` | `get_pgs_for_owner`, `OwnerPGList` |

@@ -161,3 +161,10 @@ Agreed price for each tenant = calculate_agreed_price(base, join_date). Deposit 
 Indian names, fake 10-digit phone numbers. Join dates must not be after today.
 8 tickets across both PGs, ages 1 to 20 days, mixed categories/urgencies/statuses.
 2 announcements per PG.
+
+
+## Approved product direction update (2026-10-28)
+
+The user approved migrating the UI from Tkinter to a React + TypeScript web frontend while retaining Python and SQLite for the backend. The PG owner opens a property to see a simple blueprint-style room grid and a side taskbar for Blueprint, Tenants, Rent & Payments, Maintenance, and Announcements. The visual direction is inspired by Airbnb's clean navigation and spacing.
+
+Rent is moving from annual price plus 12 installments to owner-agreed monthly rent. The owner controls the final monthly price. Attached bathrooms in rooms 1 and 2 should generally have a stronger effect on the suggested base price than late-joining adjustments, but the application must not force a fixed price or discount formula. Whole rupees remain required. The web UI prototype and monthly-rent helpers are a first milestone only; SQLite schema migration, API integration, existing service migration, and end-to-end tests remain TODO.

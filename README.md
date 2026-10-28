@@ -22,3 +22,12 @@ A beginner-friendly desktop PG management application built with Python's standa
 
 ## Notes
 The MVP supports owner and tenant login, PG/bed viewing, tenant financial summaries, maintenance tickets, and announcements. Tenant self-booking and reservations are intentionally excluded.
+
+
+## Web UI prototype
+
+The first React + TypeScript UI prototype lives in `web/`. It demonstrates the intended Airbnb-inspired owner workspace, simple floor-plan grid, bed detail panel, and owner-defined monthly rent presentation. This prototype currently uses sample display data; it does not yet read from or write to the SQLite database. The existing Python/Tkinter application remains the current connected application until the API and database migration are implemented and tested.
+
+To run the prototype, install Node.js, open PowerShell in `web`, run `npm install`, then run `npm run dev`.
+
+Monthly rent calculation helpers are in `core/monthly_rent.py`. They are currently additive and tested independently; the existing annual-price database and services have not yet been migrated. Do not treat this first milestone as a complete rent-system migration.
